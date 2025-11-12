@@ -1,6 +1,7 @@
 package com.scm.steps;
 
 import com.scm.utils.DriverManager;
+import com.scm.utils.TestTiming;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -13,6 +14,8 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
 
 public class ImdsLoginSteps {
     private WebDriver driver;
@@ -25,14 +28,17 @@ public class ImdsLoginSteps {
 
     @Given("I navigate to the IMDS login page")
     public void i_navigate_to_the_imds_login_page() {
-        // Check system property first, then environment variable, then use default
-        String imdsUrl = System.getProperty("imds.url");
+        String stepId = UUID.randomUUID().toString();
+        TestTiming.startStep(stepId, "Navigate to IMDS login page");
+        try {
+            // Check system property first, then environment variable, then use default
+            String imdsUrl = System.getProperty("imds.url");
         if (imdsUrl == null || imdsUrl.isEmpty()) {
             imdsUrl = System.getenv("IMDS_URL");
         }
         if (imdsUrl == null || imdsUrl.isEmpty()) {
-            // Default SMD URL
-            imdsUrl = "SMD-URL";
+            // Default IMDS URL
+            imdsUrl = "https://imds.azureapps.cdl.af.mil/imds/fs/fs000cams.html";
         }
         
         // Add delay before navigation to avoid rate limiting
@@ -263,12 +269,19 @@ public class ImdsLoginSteps {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
+        } finally {
+            long duration = TestTiming.endStep(stepId);
+            System.out.println("Navigation step completed in: " + TestTiming.formatDuration(duration));
+        }
     }
 
     @When("I enter terminal ID {string}")
     public void i_enter_terminal_id(String terminalId) {
-        // Wait a bit more for page to fully load
-        WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        String stepId = UUID.randomUUID().toString();
+        TestTiming.startStep(stepId, "Enter terminal ID: " + terminalId);
+        try {
+            // Wait a bit more for page to fully load
+            WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(20));
         
         // Find the terminal ID input field using the correct selector
         WebElement terminalIdField;
@@ -318,13 +331,20 @@ public class ImdsLoginSteps {
         terminalIdField.clear();
         terminalIdField.sendKeys(terminalId);
         System.out.println("Entered terminal ID: " + terminalId);
+        } finally {
+            long duration = TestTiming.endStep(stepId);
+            System.out.println("Enter terminal ID step completed in: " + TestTiming.formatDuration(duration));
+        }
     }
 
     @When("I click the IMDS login button")
     public void i_click_the_imds_login_button() {
-        // Find the login button using the correct selector: //*[@id="TerminalLogon"]
-        WebElement loginButton;
-        WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        String stepId = UUID.randomUUID().toString();
+        TestTiming.startStep(stepId, "Click IMDS login button");
+        try {
+            // Find the login button using the correct selector: //*[@id="TerminalLogon"]
+            WebElement loginButton;
+            WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(20));
         
         try {
             // Try the correct selector first: //*[@id="TerminalLogon"]
@@ -352,13 +372,20 @@ public class ImdsLoginSteps {
         
         loginButton.click();
         System.out.println("Clicked TerminalLogon button");
+        } finally {
+            long duration = TestTiming.endStep(stepId);
+            System.out.println("Click login button step completed in: " + TestTiming.formatDuration(duration));
+        }
     }
 
     @Then("I should be logged into IMDS successfully")
     public void i_should_be_logged_into_imds_successfully() {
-        // Wait for navigation after login
-        // TODO: Update to check for actual success indicator (e.g., URL change, success message)
-        WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        String stepId = UUID.randomUUID().toString();
+        TestTiming.startStep(stepId, "Verify login success");
+        try {
+            // Wait for navigation after login
+            // TODO: Update to check for actual success indicator (e.g., URL change, success message)
+            WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(15));
         
         try {
             // Wait for URL to change from login page
@@ -370,12 +397,19 @@ public class ImdsLoginSteps {
             extendedWait.until(ExpectedConditions.presenceOfElementLocated(
                 By.id("dashboard")));
         }
+        } finally {
+            long duration = TestTiming.endStep(stepId);
+            System.out.println("Verify login success step completed in: " + TestTiming.formatDuration(duration));
+        }
     }
 
     @Then("I should see the IMDS dashboard or home page")
     public void i_should_see_the_imds_dashboard_or_home_page() {
-        // TODO: Update selector to match actual dashboard/home page element
-        WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        String stepId = UUID.randomUUID().toString();
+        TestTiming.startStep(stepId, "Verify dashboard visibility");
+        try {
+            // TODO: Update selector to match actual dashboard/home page element
+            WebDriverWait extendedWait = new WebDriverWait(driver, Duration.ofSeconds(15));
         
         // Check for dashboard or home page indicators
         boolean dashboardVisible = false;
@@ -400,6 +434,60 @@ public class ImdsLoginSteps {
         
         Assert.assertTrue("IMDS dashboard or home page should be visible after login", 
                 dashboardVisible);
+        } finally {
+            long duration = TestTiming.endStep(stepId);
+            System.out.println("Verify dashboard visibility step completed in: " + TestTiming.formatDuration(duration));
+        }
+    }
+ @Then("I log off from IMDS")
+public void i_log_off_from_imds() {
+    String stepId = UUID.randomUUID().toString();
+    TestTiming.startStep(stepId, "Log off from IMDS");
+    try {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        try {
+            driver.switchTo().defaultContent();
+            List<WebElement> iframes = driver.findElements(By.tagName("iframe"));
+            System.out.println("Found " + iframes.size() + " iframes on page.");
+
+            boolean found = false;
+            for (int i = 0; i < iframes.size(); i++) {
+                driver.switchTo().defaultContent();
+                driver.switchTo().frame(i);
+                try {
+                    WebElement logoffButton = wait.until(ExpectedConditions.presenceOfElementLocated(
+                        By.xpath("//*[@id='div1']/table[1]/tbody/tr[2]/td[5]/input")
+                    ));
+                    if (logoffButton.isDisplayed()) {
+                        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", logoffButton);
+                        Thread.sleep(500);
+                        logoffButton.click();
+                        System.out.println("✅ Clicked Logoff button inside iframe index " + i);
+                        found = true;
+                        break;
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (!found) {
+                // Try in main content
+                driver.switchTo().defaultContent();
+                WebElement logoffButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//*[@id='div1']/table[1]/tbody/tr[2]/td[5]/input")
+                ));
+                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", logoffButton);
+                logoffButton.click();
+                System.out.println("✅ Clicked Logoff button in main content (fallback).");
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Could not find or click Logoff button: " + e.getMessage());
+            throw e;
+        }
+    } finally {
+        long duration = TestTiming.endStep(stepId);
+        System.out.println("Log off step completed in: " + TestTiming.formatDuration(duration));
     }
 }
-
+}
