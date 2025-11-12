@@ -13,6 +13,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.List;
 
 public class ImdsLoginSteps {
     private WebDriver driver;
@@ -31,8 +32,8 @@ public class ImdsLoginSteps {
             imdsUrl = System.getenv("IMDS_URL");
         }
         if (imdsUrl == null || imdsUrl.isEmpty()) {
-            // Default SMD URL
-            imdsUrl = "SMD-URL";
+            // Default IMDS URL
+            imdsUrl = "https://imds.azureapps.cdl.af.mil/imds/fs/fs000cams.html";
         }
         
         // Add delay before navigation to avoid rate limiting
@@ -401,5 +402,48 @@ public class ImdsLoginSteps {
         Assert.assertTrue("IMDS dashboard or home page should be visible after login", 
                 dashboardVisible);
     }
-}
+ @Then("I log off from IMDS")
+public void i_log_off_from_imds() {
+    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
+    try {
+        driver.switchTo().defaultContent();
+        List<WebElement> iframes = driver.findElements(By.tagName("iframe"));
+        System.out.println("Found " + iframes.size() + " iframes on page.");
+
+        boolean found = false;
+        for (int i = 0; i < iframes.size(); i++) {
+            driver.switchTo().defaultContent();
+            driver.switchTo().frame(i);
+            try {
+                WebElement logoffButton = wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("//*[@id='div1']/table[1]/tbody/tr[2]/td[5]/input")
+                ));
+                if (logoffButton.isDisplayed()) {
+                    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", logoffButton);
+                    Thread.sleep(500);
+                    logoffButton.click();
+                    System.out.println("✅ Clicked Logoff button inside iframe index " + i);
+                    found = true;
+                    break;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (!found) {
+            // Try in main content
+            driver.switchTo().defaultContent();
+            WebElement logoffButton = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//*[@id='div1']/table[1]/tbody/tr[2]/td[5]/input")
+            ));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", logoffButton);
+            logoffButton.click();
+            System.out.println("✅ Clicked Logoff button in main content (fallback).");
+        }
+
+    } catch (Exception e) {
+        System.out.println("❌ Could not find or click Logoff button: " + e.getMessage());
+        throw e;
+    }
+}
+}
