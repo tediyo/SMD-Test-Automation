@@ -37,8 +37,8 @@ public class ImdsLoginSteps {
             imdsUrl = System.getenv("IMDS_URL");
         }
         if (imdsUrl == null || imdsUrl.isEmpty()) {
-            // Default IMDS URL
-            imdsUrl = "https://imds.azureapps.cdl.af.mil/imds/fs/fs000cams.html";
+            // Default SMD URL
+            imdsUrl = "SMD_URL";
         }
         
         // Add delay before navigation to avoid rate limiting
